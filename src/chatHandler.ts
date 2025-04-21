@@ -83,7 +83,25 @@ export async function chatWithZendesk(userQuestion: string) {
     footer = `\n총 ${allResults.length}건 중 일부만 표시됩니다. 더 보려면 '추가로 알려줘'라고 입력하세요.`;
   }
 
-  // 6-1) 특정 용어 포함 요청
+  // 6) 질문 유형별 분기 처리
+  // 6-1) 설명 요청
+  if (/설명/.test(userQuestion)) {
+    const article = await getZendeskArticle(results[0].id);
+    const summary = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "아래 헬프센터 문서 본문을 읽고, 문서 내용을 바탕으로 2~3문장으로 레벨 게이지에 대해 설명해 주세요."
+        },
+        { role: "user", content: article.body_text }
+      ]
+    });
+    return `**${article.title} 설명**\n\n${summary.choices[0].message.content}${footer}`;
+  }
+
+  // 6-2) 특정 용어 포함 요청
   if (/(단어|용어|포함)/.test(userQuestion)) {
     const matching: ZendeskArticle[] = [];
     for (const a of results) {
@@ -110,7 +128,7 @@ export async function chatWithZendesk(userQuestion: string) {
     return `**"${kor}"(${eng}) 관련 문서 요약**\n\n${summary.choices[0].message.content}${footer}`;
   }
 
-  // 6-2) 교체/방법/절차 질문
+  // 6-3) 교체/방법/절차 질문
   if (/(교체|방법|절차)/.test(userQuestion)) {
     const article = await getZendeskArticle(results[0].id);
     const summary = await openai.chat.completions.create({
@@ -127,13 +145,13 @@ export async function chatWithZendesk(userQuestion: string) {
     return `**${article.title} 교체 절차 요약**\n\n${summary.choices[0].message.content}${footer}`;
   }
 
-  // 6-3) 문서/내용 요청
+  // 6-4) 문서/내용 요청
   if (/(문서|내용)/.test(userQuestion)) {
     const article = await getZendeskArticle(results[0].id);
     return `**${article.title}**\n\n${article.body_text}${footer}`;
   }
 
-  // 6-4) 일반 질문 → 제목 + URL 리스트
+  // 6-5) 일반 질문 → 제목 + URL 리스트
   const list = results
     .map((a, i) => `${i + 1}. ${a.title}\n   🔗 ${a.url}`)
     .join("\n");
