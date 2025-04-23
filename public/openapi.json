@@ -1,0 +1,98 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+      "title": "Zendesk Proxy API",
+      "version": "1.0.0",
+      "description": "인증된 Zendesk Help Center 검색·문서 조회용 프록시"
+    },
+    "servers": [
+      { "url": "https://zendesk-chatbot-vert.vercel.app" }
+    ],
+    "paths": {
+      "/api/proxy-search": {
+        "get": {
+          "operationId": "proxySearch",
+          "summary": "문서 검색",
+          "parameters": [
+            {
+              "name": "q",
+              "in": "query",
+              "required": true,
+              "schema": { "type": "string" },
+              "description": "검색어"
+            },
+            {
+              "name": "limit",
+              "in": "query",
+              "required": false,
+              "schema": { "type": "integer", "default": 10 },
+              "description": "최대 결과 개수"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "검색 결과 반환",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "results": {
+                        "type": "array",
+                        "items": { "$ref": "#/components/schemas/ZendeskArticle" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/api/proxy-article": {
+        "get": {
+          "operationId": "proxyArticle",
+          "summary": "단일 문서 조회",
+          "parameters": [
+            {
+              "name": "id",
+              "in": "query",
+              "required": true,
+              "schema": { "type": "integer" },
+              "description": "아티클 ID"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "문서 반환",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "article": { "$ref": "#/components/schemas/ZendeskArticle" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "ZendeskArticle": {
+          "type": "object",
+          "properties": {
+            "id":        { "type": "integer" },
+            "title":     { "type": "string" },
+            "body_text": { "type": "string" },
+            "html_url":  { "type": "string" }
+          },
+          "required": ["id","title","body_text","html_url"]
+        }
+      }
+    }
+  }
+  
