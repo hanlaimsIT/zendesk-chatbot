@@ -14,14 +14,8 @@ const BASIC_AUTH = Buffer
 export interface ZendeskArticle {
   id: number;
   title: string;
-  /** 원본 HTML 본문 */
-  body: string;
-  /** 요약/처리용 텍스트 본문 */
   body_text: string;
-  /** Zendesk JSON API 엔드포인트 URL */
   url: string;
-  /** Help Center 페이지 URL */
-  html_url: string;
 }
 
 export async function searchZendeskAPI(
@@ -35,18 +29,14 @@ export async function searchZendeskAPI(
       'Content-Type':  'application/json',
     }
   });
-  if (!res.ok) throw new Error(`Zendesk API error: ${res.status}`);
+  if (!res.ok) throw new Error(`Zendesk API ${res.status}`);
   const { results } = await res.json();
-  return (results as any[])
-    .slice(0, limit)
-    .map(a => ({
-      id:        a.id,
-      title:     a.title,
-      body:      a.body      ?? '',
-      body_text: a.body_text ?? (a.body ?? '').replace(/<[^>]+>/g, ' '),
-      url:       a.url,
-      html_url:  a.html_url,
-    }));
+  return results.slice(0, limit).map((a: any) => ({
+    id:        a.id,
+    title:     a.title,
+    body_text: a.body_text ?? a.body ?? '',
+    url:       a.html_url,
+  }));
 }
 
 export async function getZendeskArticle(
@@ -66,9 +56,7 @@ export async function getZendeskArticle(
   return {
     id:        art.id,
     title:     art.title,
-    body:      art.body      ?? '',
-    body_text: art.body_text ?? (art.body ?? '').replace(/<[^>]+>/g, ' '),
-    url:       art.url,
-    html_url:  art.html_url,
+    body_text: art.body_text ?? art.body ?? '',
+    url:       art.html_url,
   };
 }
