@@ -10,7 +10,9 @@ import {
   const BASIC_AUTH = Buffer
     .from(`${ZENDESK_EMAIL}/token:${ZENDESK_API_TOKEN}`)
     .toString("base64");
-  
+
+    
+    
   export interface ZendeskArticle {
     id: number;
     title: string;
