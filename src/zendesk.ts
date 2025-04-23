@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import axios from 'axios';
 import {
   ZENDESK_SUBDOMAIN,
   ZENDESK_EMAIL,
@@ -19,44 +20,47 @@ export interface ZendeskArticle {
 }
 
 export async function searchZendeskAPI(
-  query: string,
-  limit: number
-): Promise<ZendeskArticle[]> {
-  const url = `${BASE_URL}/help_center/articles/search.json?query=${encodeURIComponent(query)}`;
-  const res = await fetch(url, {
-    headers: {
-      'Authorization': `Basic ${BASIC_AUTH}`,
-      'Content-Type':  'application/json',
-    }
-  });
-  if (!res.ok) throw new Error(`Zendesk API ${res.status}`);
-  const { results } = await res.json();
-  return results.slice(0, limit).map((a: any) => ({
-    id:        a.id,
-    title:     a.title,
-    body_text: a.body_text ?? a.body ?? '',
-    url:       a.html_url,
-  }));
-}
-
-export async function getZendeskArticle(
-  articleId: number
-): Promise<ZendeskArticle> {
-  const url = `${BASE_URL}/help_center/articles/${articleId}.json`;
-  const res = await fetch(url, {
-    headers: {
-      'Authorization': `Basic ${BASIC_AUTH}`,
-      'Content-Type':  'application/json',
-    }
-  });
-  if (!res.ok) {
-    throw new Error(`Zendesk API error: ${res.status}`);
+    query: string,
+    limit: number
+  ): Promise<ZendeskArticle[]> {
+    const resp = await axios.get(
+      `${BASE_URL}/help_center/articles/search.json`,
+      {
+        params: { query, per_page: limit },
+        auth: {
+          // username 에는 반드시 “email/token” 형태를 넣습니다
+          username: `${ZENDESK_EMAIL}/token`,
+          password: ZENDESK_API_TOKEN
+        }
+      }
+    );
+    const results = resp.data.results as any[];
+    return results.slice(0, limit).map(a => ({
+      id:        a.id,
+      title:     a.title,
+      body_text: a.body_text ?? a.body ?? '',
+      url:       a.html_url,
+    }));
   }
-  const { article: art } = await res.json();
-  return {
-    id:        art.id,
-    title:     art.title,
-    body_text: art.body_text ?? art.body ?? '',
-    url:       art.html_url,
-  };
-}
+
+  export async function getZendeskArticle(
+    articleId: number
+  ): Promise<ZendeskArticle> {
+    const resp = await axios.get(
+      `${BASE_URL}/help_center/articles/${articleId}.json`,
+      {
+        auth: {
+          username: `${ZENDESK_EMAIL}/token`,
+          password: ZENDESK_API_TOKEN
+        }
+      }
+    );
+    const art = resp.data.article;
+    return {
+      id:        art.id,
+      title:     art.title,
+      body_text: art.body_text ?? art.body ?? '',
+      url:       art.html_url,
+    };
+  }
+  
